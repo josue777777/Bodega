@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registro de Producto</title>
+    <link rel="stylesheet" href="../estilos/estilos.css" />
+</head>
+
+<body>
+    <header>
+        <h1>Registrar Producto</h1>
+        <nav>
+            <a href="index.html">Inicio</a>
+        </nav>
+    </header>
+    <main>
+        <form>
+            <label for="idProducto">ID del producto:</label>
+            <input type="number" id="idProducto" readonly />
+
+            <label for="nombre">Nombre del producto:</label>
+            <input type="text" id="nombre" required />
+
+            <label for="descripcion">Descripción:</label>
+            <textarea id="descripcion" required></textarea>
+
+            <label for="unidadMedida">Unidad de medida:</label>
+            <select id="unidadMedida" required>
+                <option value="">Seleccione una opción</option>
+                <option value="1">Unidad</option>
+                <option value="2">Kilogramos</option>
+                <option value="3">Litros</option>
+            </select>
+
+            <label for="estado">Estado del producto:</label>
+            <select id="estado" required>
+                <option value="">Seleccione un estado</option>
+                <option value="1">Activo</option>
+                <option value="2">Inactivo</option>
+            </select>
+
+            <label for="bodega">Bodega:</label>
+            <select id="bodega" required>
+                <option value="">Seleccione una bodega</option>
+                <option value="central">Bodega Central</option>
+                <option value="secundaria">Bodega Secundaria</option>
+            </select>
+
+            <button type="button" onclick="registrarProducto()">Registrar Producto</button>
+        </form>
+    </main>
+
+    <script>
+        function generarIdProducto() {
+            const productos = JSON.parse(localStorage.getItem("productos")) || [];
+            return productos.length > 0 ? parseInt(productos[productos.length - 1].id) + 1 : 1;
+        }
+
+        function registrarProducto() {
+            const id = parseInt(document.getElementById("idProducto").value);
+            const nombre = document.getElementById("nombre").value;
+            const descripcion = document.getElementById("descripcion").value;
+            const unidad = document.getElementById("unidadMedida").value;
+            const estado = document.getElementById("estado").value;
+            const bodega = document.getElementById("bodega").value;
+
+            if (!nombre || !descripcion || !unidad || !estado || !bodega) {
+                alert("Por favor, complete todos los campos.");
+                return;
+            }
+
+            const producto = {
+                id,
+                nombre,
+                descripcion,
+                unidad,
+                estado,
+                bodega,
+                cantidad: 0
+            };
+
+            let productos = JSON.parse(localStorage.getItem("productos")) || [];
+            productos.push(producto);
+            localStorage.setItem("productos", JSON.stringify(productos));
+
+            alert("Producto registrado correctamente");
+
+            document.getElementById("nombre").value = "";
+            document.getElementById("descripcion").value = "";
+            document.getElementById("unidadMedida").value = "";
+            document.getElementById("estado").value = "";
+            document.getElementById("bodega").value = "";
+
+            document.getElementById("idProducto").value = generarIdProducto();
+        }
+
+        window.onload = () => {
+            document.getElementById("idProducto").value = generarIdProducto();
+        };
+    </script>
+</body>
+
+</html>

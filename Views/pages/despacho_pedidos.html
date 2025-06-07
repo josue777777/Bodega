@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Despacho de Pedidos</title>
+  <link rel="stylesheet" href="../estilos/estilos.css" />
+</head>
+<body>
+  <header>
+    <h1>Despacho de Pedidos</h1>
+    <nav>
+      <a href="index.html">Inicio</a>
+    </nav>
+  </header>
+  <main>
+    <form onsubmit="event.preventDefault(); confirmarDespacho();">
+      <label for="factura">Seleccionar factura:</label>
+      <select id="factura" required onchange="mostrarFactura()">
+        <option value="">-- Seleccione --</option>
+      </select>
+
+      <label for="origen">Sede de Origen:</label>
+      <input type="text" id="origen" readonly />
+
+      <label for="fecha">Fecha de Despacho:</label>
+      <input type="date" id="fecha" required />
+
+      <h3>Detalle del Pedido</h3>
+      <table border="1">
+        <thead>
+          <tr>
+            <th>ID Producto</th>
+            <th>Cantidad Recibida</th>
+          </tr>
+        </thead>
+        <tbody id="detalleFactura"></tbody>
+      </table>
+
+      <br />
+      <button type="submit">Confirmar Despacho</button>
+    </form>
+  </main>
+
+  <script>
+    let facturas = [];
+    let facturaSeleccionada = null;
+
+    function cargarFacturas() {
+      facturas = JSON.parse(localStorage.getItem("facturasRecepcion")) || [];
+      const select = document.getElementById("factura");
+      select.innerHTML = "<option value=''>-- Seleccione --</option>";
+
+      facturas.forEach(f => {
+        const option = document.createElement("option");
+        option.value = f.idFactura;
+        option.textContent = `Factura #${f.idFactura} (Pedido #${f.idPedido})`;
+        select.appendChild(option);
+      });
+    }
+
+    function mostrarFactura() {
+      const id = document.getElementById("factura").value;
+      if (!id) return;
+
+      facturaSeleccionada = facturas.find(f => String(f.idFactura) === id);
+      document.getElementById("origen").value = obtenerNombreSede(facturaSeleccionada.sede);
+
+      const tabla = document.getElementById("detalleFactura");
+      tabla.innerHTML = "";
+
+      facturaSeleccionada.detalle.forEach(item => {
+        const fila = document.createElement("tr");
+        fila.innerHTML = `
+          <td>${item.idProducto}</td>
+          <td>${item.cantidadRecibida}</td>
+        `;
+        tabla.appendChild(fila);
+      });
+    }
+
+    function confirmarDespacho() {
+      const fecha = document.getElementById("fecha").value;
+
+      if (!facturaSeleccionada || !fecha) {
+        alert("Complete todos los datos.");
+        return;
+      }
+
+      const despachos = JSON.parse(localStorage.getItem("despachos")) || [];
+
+      const nuevoDespacho = {
+        idDespacho: despachos.length + 1,
+        idPedido: facturaSeleccionada.idPedido,
+        idFactura: facturaSeleccionada.idFactura,
+        fechaDespacho: fecha,
+        sede: facturaSeleccionada.sede,
+        estado: 1,
+        detalle: facturaSeleccionada.detalle
+      };
+
+      despachos.push(nuevoDespacho);
+      localStorage.setItem("despachos", JSON.stringify(despachos));
+
+      actualizarStockDespacho(facturaSeleccionada.detalle);
+
+      alert("Despacho confirmado.");
+      document.querySelector("form").reset();
+      document.getElementById("detalleFactura").innerHTML = "";
+      document.getElementById("origen").value = "";
+    }
+
+    function actualizarStockDespacho(detalle) {
+      let productos = JSON.parse(localStorage.getItem("productos")) || [];
+
+      detalle.forEach(desp => {
+        const index = productos.findIndex(p => String(p.id) === String(desp.idProducto));
+        if (index !== -1) {
+          let cantidadActual = parseInt(productos[index].cantidad) || 0;
+          productos[index].cantidad = cantidadActual + parseInt(desp.cantidadRecibida);
+        }
+      });
+
+      localStorage.setItem("productos", JSON.stringify(productos));
+    }
+
+    function obtenerNombreSede(id) {
+      switch (id) {
+        case "1": return "Central";
+        case "2": return "Secundaria";
+        case "3": return "Pacífico";
+        case "4": return "Caribe";
+        default: return "Desconocida";
+      }
+    }
+
+    window.onload = cargarFacturas;
+  </script>
+</body>
+</html>
