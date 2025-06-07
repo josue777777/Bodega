@@ -88,7 +88,8 @@ if (!isset($_SESSION["username"])) {
             </div>
 
           </div>
-          <a href="/bodegas/logout.php">Cerrar sesión</a>
+          <a href="../Login/logout.php">Cerrar sesión</a>
+
         </div>
       </div>
 
