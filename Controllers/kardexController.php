@@ -11,13 +11,21 @@ function obtenerConexion()
 // ==============================
 // 1. Mostrar movimientos
 // ==============================
-function mostrarHistorialKardex($imprimir = true)
+function mostrarHistorialKardex($imprimir = true, $codigoProducto)
 {
     $saldo = 0;
     $conn = obtenerConexion();
 
-    $sql = "SELECT * FROM kardex ORDER BY fecha ASC, id ASC";
-    $resultado = $conn->query($sql);
+    $stmt = $conn->prepare("
+        SELECT k.* FROM kardex k
+        INNER JOIN producto p ON k.producto_id = p.id
+        WHERE p.codigo = ?
+        ORDER BY k.fecha ASC, k.id ASC
+    ");
+    $stmt->bind_param("s", $codigoProducto);
+    $stmt->execute();
+    $resultado = $stmt->get_result();
+
     $filas = [];
 
     if ($resultado && $resultado->num_rows > 0) {
@@ -49,12 +57,14 @@ function mostrarHistorialKardex($imprimir = true)
             }
         }
     } elseif ($imprimir) {
-        echo "<tr><td colspan='6'>No hay movimientos registrados.</td></tr>";
+        echo "<tr><td colspan='6'>⚠️ Producto no encontrado para el código: <b>" . htmlspecialchars($codigoProducto) . "</b></td></tr>";
     }
 
     $conn->close();
     return $saldo;
 }
+
+
 
 // ==============================
 // 2. Utilidades
@@ -94,6 +104,28 @@ function obtenerOLoteId($producto_id, $numero_lote, $fecha_vencimiento)
     $conn->close();
     return $nuevo_id;
 }
+
+
+
+
+function obtenerDescripcionProducto($codigo)
+{
+    $conn = obtenerConexion();
+    $stmt = $conn->prepare("SELECT descripcion FROM producto WHERE codigo = ?");
+    $stmt->bind_param("s", $codigo);
+    $stmt->execute();
+    $stmt->bind_result($descripcion);
+
+    $desc = $stmt->fetch() ? $descripcion : null;
+
+    $stmt->close();
+    $conn->close();
+    return $desc;
+}
+
+
+
+
 
 // ==============================
 // 3. Insertar movimiento
@@ -150,7 +182,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     ];
 
     if (registrarMovimientoCompleto($datos)) {
-        header("Location: ../Views/Pages/kardex.php");
+        header("Location: ../Views/Pages/kardex.php?codigo=" . urlencode($codigo));
         exit();
     } else {
         echo "❌ Error al registrar el movimiento.";
@@ -160,8 +192,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 // ==============================
 // 5. Enrutamiento GET (?mostrar)
 // ==============================
-if (isset($_GET['mostrar'])) {
-    mostrarHistorialKardex();
+if (isset($_GET['mostrar']) && isset($_GET['codigo'])) {
+    mostrarHistorialKardex(true, $_GET['codigo']);
     exit();
 }
 ?>

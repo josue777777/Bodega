@@ -4,6 +4,11 @@ if (!isset($_SESSION["username"])) {
     header("Location: ../Login/login.php");
     exit();
 }
+
+require_once __DIR__ . '/../../Controllers/kardexController.php';
+
+$codigoSeleccionado = $_GET['codigo'] ?? null;
+$descripcionProducto = $codigoSeleccionado ? obtenerDescripcionProducto($codigoSeleccionado) : null;
 ?>
 
 <!DOCTYPE html>
@@ -17,16 +22,30 @@ if (!isset($_SESSION["username"])) {
 </head>
 
 <body>
-
-    <?php
-    ob_start();
-    ?>
+    <?php ob_start(); ?>
 
     <!-- Barra superior del módulo -->
     <div class="kardex-topbar">
-        <span>Producto: Cesta de almacenamiento de frutas (ID: 90001)</span>
+        <span>
+            <?php if ($descripcionProducto): ?>
+                Producto: <?= htmlspecialchars($descripcionProducto) ?> (Código:
+                <?= htmlspecialchars($codigoSeleccionado) ?>)
+            <?php elseif ($codigoSeleccionado): ?>
+                Producto: Descripción no encontrada (Código: <?= htmlspecialchars($codigoSeleccionado) ?>)
+            <?php else: ?>
+                Producto no seleccionado
+            <?php endif; ?>
+        </span>
         <span>Usuario: <?= htmlspecialchars($_SESSION["nombre_usuario"]) ?></span>
     </div>
+
+    <!-- Buscador de producto -->
+    <form method="GET" action="kardex.php" style="padding: 15px;">
+        <label>Ingrese el código del producto:
+            <input type="text" name="codigo" value="<?= htmlspecialchars($codigoSeleccionado ?? '') ?>" required />
+        </label>
+        <button type="submit">Buscar</button>
+    </form>
 
     <main class="kardex-main">
         <!-- Formulario -->
@@ -34,9 +53,7 @@ if (!isset($_SESSION["username"])) {
             <form method="POST" action="../../Controllers/kardexController.php">
                 <h3>Nuevo Movimiento</h3>
 
-                <label>Código del producto:
-                    <input type="text" name="codigo" required />
-                </label>
+                <input type="hidden" name="codigo" value="<?= htmlspecialchars($codigoSeleccionado ?? '') ?>">
 
                 <label>Número de lote:
                     <input type="text" name="numero_lote" />
@@ -71,21 +88,6 @@ if (!isset($_SESSION["username"])) {
         <!-- Tabla e historial -->
         <section class="kardex-right">
             <h3>Historial de Movimientos</h3>
-
-            <?php
-            include_once __DIR__ . '/../../Controllers/kardexController.php';
-
-            $minimo = 5;
-            $maximo = 20;
-            $saldo = mostrarHistorialKardex(false);
-
-            if ($saldo < $minimo) {
-                echo "<div class='alert-box alert-low'>⚠️ El stock está por debajo del mínimo ({$saldo} unidades)</div>";
-            } elseif ($saldo > $maximo) {
-                echo "<div class='alert-box alert-high'>⚠️ El stock ha superado el máximo ({$saldo} unidades)</div>";
-            }
-            ?>
-
             <table>
                 <thead>
                     <tr>
@@ -98,7 +100,23 @@ if (!isset($_SESSION["username"])) {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php mostrarHistorialKardex(true); ?>
+                    <?php
+                    if ($codigoSeleccionado) {
+                        $minimo = 5;
+                        $maximo = 20;
+                        $saldo = mostrarHistorialKardex(false, $codigoSeleccionado);
+
+                        if ($saldo < $minimo) {
+                            echo "<tr><td colspan='6'><div class='alert-box alert-low'>⚠️ El stock está por debajo del mínimo ({$saldo} unidades)</div></td></tr>";
+                        } elseif ($saldo > $maximo) {
+                            echo "<tr><td colspan='6'><div class='alert-box alert-high'>⚠️ El stock ha superado el máximo ({$saldo} unidades)</div></td></tr>";
+                        }
+
+                        mostrarHistorialKardex(true, $codigoSeleccionado);
+                    } else {
+                        echo "<tr><td colspan='6'>Ingrese un código para mostrar el historial.</td></tr>";
+                    }
+                    ?>
                 </tbody>
             </table>
         </section>
@@ -116,8 +134,6 @@ if (!isset($_SESSION["username"])) {
     $contenido = ob_get_clean();
     include_once __DIR__ . '/../layout/layout.php';
     ?>
-
-
 
 </body>
 
