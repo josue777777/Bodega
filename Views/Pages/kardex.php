@@ -8,7 +8,10 @@ if (!isset($_SESSION["username"])) {
 require_once __DIR__ . '/../../Controllers/kardexController.php';
 
 $codigoSeleccionado = $_GET['codigo'] ?? null;
-$descripcionProducto = $codigoSeleccionado ? obtenerDescripcionProducto($codigoSeleccionado) : null;
+$productoSeleccionado = $codigoSeleccionado ? obtenerProductoCompleto($codigoSeleccionado) : null;
+$descripcionProducto = $productoSeleccionado['descripcion'] ?? null;
+$unidadMedida = $productoSeleccionado['unidad_medida'] ?? null;
+$config = $codigoSeleccionado ? obtenerConfigStock($codigoSeleccionado) : ['minimo' => '', 'maximo' => ''];
 ?>
 
 <!DOCTYPE html>
@@ -24,7 +27,6 @@ $descripcionProducto = $codigoSeleccionado ? obtenerDescripcionProducto($codigoS
 <body>
     <?php ob_start(); ?>
 
-    <!-- Barra superior del módulo -->
     <div class="kardex-topbar">
         <span>
             <?php if ($descripcionProducto): ?>
@@ -36,10 +38,12 @@ $descripcionProducto = $codigoSeleccionado ? obtenerDescripcionProducto($codigoS
                 Producto no seleccionado
             <?php endif; ?>
         </span>
-        <span>Usuario: <?= htmlspecialchars($_SESSION["nombre_usuario"]) ?></span>
+        <span>
+            Unidad de medida: <?= htmlspecialchars($unidadMedida ?? '-') ?> |
+            Usuario: <?= htmlspecialchars($_SESSION["nombre_usuario"]) ?>
+        </span>
     </div>
 
-    <!-- Buscador de producto -->
     <form method="GET" action="kardex.php" style="padding: 15px;">
         <label>Ingrese el código del producto:
             <input type="text" name="codigo" value="<?= htmlspecialchars($codigoSeleccionado ?? '') ?>" required />
@@ -47,8 +51,23 @@ $descripcionProducto = $codigoSeleccionado ? obtenerDescripcionProducto($codigoS
         <button type="submit">Buscar</button>
     </form>
 
+    <?php if ($codigoSeleccionado): ?>
+        <!-- 🔧 Formulario de configuración de stock mínimo/máximo -->
+        <form method="POST" action="../../Controllers/kardexController.php" style="margin: 0 15px;">
+            <input type="hidden" name="actualizar_config_stock" value="1">
+            <input type="hidden" name="codigo" value="<?= htmlspecialchars($codigoSeleccionado) ?>">
+
+            <label>Stock mínimo:
+                <input type="number" name="stock_minimo" value="<?= htmlspecialchars($config['minimo']) ?>" required>
+            </label>
+            <label>Stock máximo:
+                <input type="number" name="stock_maximo" value="<?= htmlspecialchars($config['maximo']) ?>" required>
+            </label>
+            <button type="submit">Guardar Configuración</button>
+        </form>
+    <?php endif; ?>
+
     <main class="kardex-main">
-        <!-- Formulario -->
         <section class="kardex-left">
             <form method="POST" action="../../Controllers/kardexController.php">
                 <h3>Nuevo Movimiento</h3>
@@ -78,14 +97,10 @@ $descripcionProducto = $codigoSeleccionado ? obtenerDescripcionProducto($codigoS
                 <label><input type="checkbox" id="toggleEmpresa"> Incluir empresa</label>
                 <input type="text" name="empresa" id="empresaInput" placeholder="Empresa" disabled>
 
-                <label>Stock mínimo: <input type="number" name="stock_minimo" value="5" required></label>
-                <label>Stock máximo: <input type="number" name="stock_maximo" value="20" required></label>
-
                 <button type="submit">Registrar</button>
             </form>
         </section>
 
-        <!-- Tabla e historial -->
         <section class="kardex-right">
             <h3>Historial de Movimientos</h3>
             <table>
@@ -102,13 +117,13 @@ $descripcionProducto = $codigoSeleccionado ? obtenerDescripcionProducto($codigoS
                 <tbody>
                     <?php
                     if ($codigoSeleccionado) {
-                        $minimo = 5;
-                        $maximo = 20;
+                        $stockMinimo = $config['minimo'];
+                        $stockMaximo = $config['maximo'];
                         $saldo = mostrarHistorialKardex(false, $codigoSeleccionado);
 
-                        if ($saldo < $minimo) {
+                        if ($saldo < $stockMinimo) {
                             echo "<tr><td colspan='6'><div class='alert-box alert-low'>⚠️ El stock está por debajo del mínimo ({$saldo} unidades)</div></td></tr>";
-                        } elseif ($saldo > $maximo) {
+                        } elseif ($saldo > $stockMaximo) {
                             echo "<tr><td colspan='6'><div class='alert-box alert-high'>⚠️ El stock ha superado el máximo ({$saldo} unidades)</div></td></tr>";
                         }
 

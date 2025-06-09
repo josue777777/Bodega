@@ -58,8 +58,12 @@ INSERT INTO USUARIO_ROL (USUARIO_ID, ROL_ID) VALUES (2, 2);
 CREATE TABLE producto (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     codigo VARCHAR(50) NOT NULL UNIQUE,
-    descripcion TEXT NOT NULL
+    descripcion TEXT NOT NULL,
+    unidad_medida VARCHAR(50) DEFAULT 'UNIDAD'
 );
+
+
+
 
 CREATE TABLE lote (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -81,6 +85,17 @@ CREATE TABLE kardex (
     FOREIGN KEY (producto_id) REFERENCES producto(id),
     FOREIGN KEY (lote_id) REFERENCES lote(id)
 );
+
+CREATE TABLE kardex_config (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    producto_id INT UNSIGNED NOT NULL UNIQUE,
+    stock_minimo INT NOT NULL DEFAULT 0,
+    stock_maximo INT NOT NULL DEFAULT 0,
+    FOREIGN KEY (producto_id) REFERENCES producto(id)
+);
+
+
+
 
 
 
