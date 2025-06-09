@@ -56,6 +56,8 @@ if (!isset($_SESSION["username"])) {
 
 
 
+
+
     <div id="supercontainer">
       <div class="sidebar">
         <div class="logo-details">
@@ -67,7 +69,7 @@ if (!isset($_SESSION["username"])) {
         <!-- Menú lateral -->
         <ul class="nav-links">
           <li><a href="#"><span class="link_name">Inicio</span></a></li>
-          <li><a href="kardex.html"><span class="link_name">Kardex</span></a></li>
+          <li><a href="../Pages/kardex.php"><span class="link_name">Kardex</span></a></li>
           <li><a href="#"><span class="link_name">Inventarios</span></a></li>
           <li><a href="#"><span class="link_name">Configuración</span></a></li>
           <li><a href="#"><span class="link_name">Ayuda</span></a></li>

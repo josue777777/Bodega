@@ -49,3 +49,39 @@ VALUES ('Administrador General', 'admin@email.com', 'admin', '$2a$10$xaaReEFEh8.
 -- RELACIÓN USUARIO/ROL
 INSERT INTO USUARIO_ROL (USUARIO_ID, ROL_ID) VALUES (1, 1);
 INSERT INTO USUARIO_ROL (USUARIO_ID, ROL_ID) VALUES (2, 2);
+
+
+-- ===============================
+-- TABLAS DE INVENTARIO
+-- ===============================
+
+CREATE TABLE producto (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL UNIQUE,
+    descripcion TEXT NOT NULL
+);
+
+CREATE TABLE lote (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    producto_id INT UNSIGNED NOT NULL,
+    numero_lote VARCHAR(100),
+    fecha_vencimiento DATE DEFAULT NULL,
+    FOREIGN KEY (producto_id) REFERENCES producto(id)
+);
+
+CREATE TABLE kardex (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    producto_id INT UNSIGNED NOT NULL,
+    lote_id INT UNSIGNED DEFAULT NULL,
+    fecha DATE NOT NULL,
+    tipo ENUM('entrada', 'salida') NOT NULL,
+    cantidad INT NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    empresa VARCHAR(100) DEFAULT NULL,
+    FOREIGN KEY (producto_id) REFERENCES producto(id),
+    FOREIGN KEY (lote_id) REFERENCES lote(id)
+);
+
+
+
+
